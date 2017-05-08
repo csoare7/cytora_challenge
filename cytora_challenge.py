@@ -19,9 +19,8 @@ BUCKET = "cytora-interview-data"
 
 with open('keys.json') as json_data:
     keys = json.load(json_data)
-GEOCODE_API_KEY = keys["opencage_api_key"]
+
 GOOGLEMAPS_API_KEY = keys["gmaps_api_key"]
-geocoder = OpenCageGeocode(GEOCODE_API_KEY)
 gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
 
 

@@ -11794,9 +11794,8 @@ div#notebook {
 
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;keys.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_data</span><span class="p">:</span>
     <span class="n">keys</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
-<span class="n">GEOCODE_API_KEY</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;opencage_api_key&quot;</span><span class="p">]</span>
+
 <span class="n">GOOGLEMAPS_API_KEY</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;gmaps_api_key&quot;</span><span class="p">]</span>
-<span class="n">geocoder</span> <span class="o">=</span> <span class="n">OpenCageGeocode</span><span class="p">(</span><span class="n">GEOCODE_API_KEY</span><span class="p">)</span>
 <span class="n">gmaps</span> <span class="o">=</span> <span class="n">googlemaps</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">GOOGLEMAPS_API_KEY</span><span class="p">)</span>
 </pre></div>
 
