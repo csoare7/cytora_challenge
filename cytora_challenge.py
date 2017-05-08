@@ -55,7 +55,7 @@ def get_blobs(client):
 get_blobs(client)
 
 
-# In[43]:
+# In[45]:
 
 def get_personal_ents(text):
     personal_ents = []
@@ -81,11 +81,9 @@ def get_geo_locations(text):
 def get_geocode_from_location(loc_name):
     location = {"lat": 0, "long": 0}
     results = gmaps.geocode(loc_name)
-    import pprint
-    pprint.pprint(results[0])
     if len(results) > 0:
-        location["lat"] = results[0]["address_components"]["location"]["lat"]
-        location["long"] = results[0]["address_components"]["location"]["lng"]
+        location["lat"] = results[0]["geometry"]["location"]["lat"]
+        location["long"] = results[0]["geometry"]["location"]["lng"]
     return location
 
 for article in articles:
@@ -98,7 +96,7 @@ for article in articles:
 #print(articles)
 
 
-# In[44]:
+# In[46]:
 
 get_geocode_from_location("Glasgow")
 
