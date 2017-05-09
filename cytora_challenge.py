@@ -1,9 +1,12 @@
 
 # coding: utf-8
 
-# In[68]:
+# # Initialisation & imports
+
+# In[152]:
 
 from google.cloud import storage
+from google.cloud.storage import Blob
 from google.oauth2 import service_account
 from opencage.geocoder import OpenCageGeocode
 import googlemaps
@@ -11,10 +14,12 @@ import google.auth
 import json
 import spacy 
 import time
+import hashlib
 
 PROJECT = "cytora-interviews"
 CREDENTIALS = "cytora-interview-service-account.json"
 BUCKET = "cytora-interview-data"
+RESULTS_BUCKET = "cytora-interview-results"
 
 with open('keys.json') as json_data:
     keys = json.load(json_data)
@@ -24,36 +29,51 @@ gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
 nlp = spacy.load('en')
 
 
+# # Establish the connection to Google Storage
+
 # In[60]:
 
 # https://medium.com/google-cloud/simple-google-api-auth-samples-for-service-accounts-installed-application-and-appengine-da30ee4648
 def connect():
-  credentials = service_account.Credentials.from_service_account_file(CREDENTIALS)
-  if credentials.requires_scopes:
-    credentials = credentials.with_scopes(['https://www.googleapis.com/auth/devstorage.read_write'])
+    credentials = service_account.Credentials.from_service_account_file(CREDENTIALS)
+    if credentials.requires_scopes:
+        credentials = credentials.with_scopes(['https://www.googleapis.com/auth/devstorage.read_write'])
     try:
-      return storage.Client(project=PROJECT, credentials=credentials)
+        return storage.Client(project=PROJECT, credentials=credentials)
     except Exception as e:
-      raise e
+        raise e
 client = connect()
 
 
+# # Fetch the news data from the bucket
+
 # In[64]:
 
-articles = []
 def get_blobs(client):
-  try:
-    bucket = client.get_bucket(BUCKET)
-    if bucket:
-      blobs = bucket.list_blobs()
-      for blob in blobs:
-        articles.append(json.loads(blob.download_as_string().decode("utf-8")))
-  except Exception as e:
-    raise e
-get_blobs(client)
+    articles = []
+    try:
+        bucket = client.get_bucket(BUCKET)
+        if bucket:
+            blobs = bucket.list_blobs()
+            for blob in blobs:
+                articles.append(json.loads(blob.download_as_string().decode("utf-8")))
+            return articles
+    except Exception as e:
+        return articles
+articles = get_blobs(client)
 
 
-# In[95]:
+# # Define data processing & upload methods
+
+# In[151]:
+
+def md5(string):
+    return hashlib.md5(string.encode('utf-8')).hexdigest()
+
+def upload_blob(article, prefix=None, file_type=".json"):
+    blob_name = md5(article["title"])
+    blob = result_bucket.blob(prefix + blob_name + file_type)
+    blob.upload_from_string(json.dumps(article))
 
 def get_personal_ents(text):
     personal_ents = []
@@ -97,15 +117,17 @@ def get_geocode_from_location(loc_name):
             cached_locations[loc_name] = location
     return location
 
+
+# # Now process and upload the data :)
+
+# In[142]:
+
+result_bucket = client.get_bucket(RESULTS_BUCKET)
 for article in articles:
     processed_content = nlp(article["content"])
     article["personal_ents"] = get_personal_ents(processed_content)
     article["organisations"] = get_organisations(processed_content)
     article["geo_locations"] = get_geo_locations(processed_content)
+    upload_blob(prefix="cosoare/", article)
     time.sleep(100)
-
-
-# In[96]:
-
-
 
