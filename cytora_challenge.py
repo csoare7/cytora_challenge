@@ -8,7 +8,6 @@
 from google.cloud import storage
 from google.cloud.storage import Blob
 from google.oauth2 import service_account
-from opencage.geocoder import OpenCageGeocode
 import googlemaps
 import google.auth
 import json
@@ -16,15 +15,15 @@ import spacy
 import time
 import hashlib
 
+with open('keys.json') as json_data:
+    keys = json.load(json_data)
+
+GOOGLEMAPS_API_KEY = keys["gmaps_api_key"]
 PROJECT = "cytora-interviews"
 CREDENTIALS = "cytora-interview-service-account.json"
 BUCKET = "cytora-interview-data"
 RESULTS_BUCKET = "cytora-interview-results"
 
-with open('keys.json') as json_data:
-    keys = json.load(json_data)
-
-GOOGLEMAPS_API_KEY = keys["gmaps_api_key"]
 gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
 nlp = spacy.load('en')
 
