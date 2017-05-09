@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[26]:
+# In[68]:
 
 from google.cloud import storage
 from google.oauth2 import service_account
@@ -10,8 +10,7 @@ import googlemaps
 import google.auth
 import json
 import spacy 
-
-nlp = spacy.load('en')
+import time
 
 PROJECT = "cytora-interviews"
 CREDENTIALS = "cytora-interview-service-account.json"
@@ -22,9 +21,10 @@ with open('keys.json') as json_data:
 
 GOOGLEMAPS_API_KEY = keys["gmaps_api_key"]
 gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+nlp = spacy.load('en')
 
 
-# In[13]:
+# In[60]:
 
 # https://medium.com/google-cloud/simple-google-api-auth-samples-for-service-accounts-installed-application-and-appengine-da30ee4648
 def connect():
@@ -38,7 +38,7 @@ def connect():
 client = connect()
 
 
-# In[14]:
+# In[64]:
 
 articles = []
 def get_blobs(client):
@@ -48,13 +48,12 @@ def get_blobs(client):
       blobs = bucket.list_blobs()
       for blob in blobs:
         articles.append(json.loads(blob.download_as_string().decode("utf-8")))
-        break
   except Exception as e:
     raise e
 get_blobs(client)
 
 
-# In[45]:
+# In[95]:
 
 def get_personal_ents(text):
     personal_ents = []
@@ -72,17 +71,30 @@ def get_organisations(text):
 
 def get_geo_locations(text):
     locations = []
+    location_names = []
     for ent in text.ents:
-        if ent.label_ == 'GPE' and ent.text not in locations:
-            locations.append(ent.text)
+        loc_name = ent.text
+        if ent.label_ == 'GPE' and loc_name not in location_names:
+            location_names.append(loc_name)
+            locations.append({"name": loc_name, "location": get_geocode_from_location(loc_name)})
     return locations  
 
+# need to keep cache of existing locations to avoid double requests & keep quota low 
+# cached_locations = {"name1": {"lat": 0, "long": 0}, ...}
+cached_locations = {}
 def get_geocode_from_location(loc_name):
     location = {"lat": 0, "long": 0}
-    results = gmaps.geocode(loc_name)
-    if len(results) > 0:
-        location["lat"] = results[0]["geometry"]["location"]["lat"]
-        location["long"] = results[0]["geometry"]["location"]["lng"]
+    if loc_name in cached_locations:
+        # read cached data if exists already
+        location = cached_locations[loc_name]
+    else:
+        # fetch geoloc data from Google API
+        results = gmaps.geocode(loc_name)
+        if len(results) > 0:
+            location["lat"] = results[0]["geometry"]["location"]["lat"]
+            location["long"] = results[0]["geometry"]["location"]["lng"]
+            # cache location data
+            cached_locations[loc_name] = location
     return location
 
 for article in articles:
@@ -90,17 +102,10 @@ for article in articles:
     article["personal_ents"] = get_personal_ents(processed_content)
     article["organisations"] = get_organisations(processed_content)
     article["geo_locations"] = get_geo_locations(processed_content)
-    break
-    
-#print(articles)
+    time.sleep(100)
 
 
-# In[46]:
-
-get_geocode_from_location("Glasgow")
-
-
-# In[ ]:
+# In[96]:
 
 
 
